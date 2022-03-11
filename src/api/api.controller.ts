@@ -46,6 +46,26 @@ export class API {
         ...check
       })
     }
+    const pre_conditions = [
+      {
+        label: 'is_availabe',
+        check: async ({ id }: { id: number; }) => {
+          return this.db.checkAvailability(id);
+        },
+        error_message: 'Product is not available now'
+      }
+    ];
+
+    for (const condition of pre_conditions) {
+      const _check = await condition.check(orderProductDto);
+      if (!_check) {
+        return response.send({
+          completed: false,
+          error: condition.error_message
+        })
+      }
+    }
+    
     const options = Object.assign({}, orderProductDto);
     if (!options.hasOwnProperty('user_id')) {
       options.user_id = 5;
@@ -56,6 +76,18 @@ export class API {
       completed: true,
       data: {
         order
+      }
+    })
+  }
+
+  @HttpCode(201)
+  @Get('report')
+  async createReport(@Res() response: Response) {
+    const report = await this.orders.report();
+    return response.send({
+      completed: true,
+      data: {
+        report
       }
     })
   }
@@ -74,7 +106,8 @@ export class API {
             return false;
           }
           return true;
-        }
+        },
+        error_message: 'Period should be in range of 1 and 30'
       }
     ];
     const methods = {
@@ -105,9 +138,14 @@ export class API {
       const check = item.hasOwnProperty('check') && typeof item.check === 'function' ?
         item.check(body[item.field]) : typeof body[item.field] === item.type;
       if (!check) {
-        return {
+        const response = {
           error: `Field ${item.field} is not valid`
         }
+        if (item.hasOwnProperty('error_message')) {
+          //@ts-ignore
+          response.reason = item.error_message;
+        }
+        return response;
       }
       return {
         completed: true

@@ -1,7 +1,7 @@
 CREATE SCHEMA IF NOT EXISTS booking;
 
 CREATE TYPE tarifs_denotations AS ENUM ('base');
-CREATE TYPE discount_values AS ENUM (4, 9, 17, 29);
+CREATE TYPE discount_values AS ENUM (5, 10, 18);
 CREATE TYPE product_types AS ENUM ('car');
 
 CREATE TABLE IF NOT EXISTS booking.orders(

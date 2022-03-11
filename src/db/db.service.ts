@@ -9,7 +9,9 @@ import {
 import { DbConnectionOptions } from '../config/interfaces';
 import { ConfigService } from 'src/config/config.service';
 import {
-  DiscountPoint, Order
+  DiscountPoint,
+  Order,
+  Product
 } from '../orders/interfaces';
 import { nanoid } from 'nanoid';
 import {
@@ -80,6 +82,23 @@ export class DbService {
       }
     }
     throw new Error('unexpeted error');
+  }
+
+  async getProducts(): Promise<Product[]> {
+    const db_name = this.config.getOrThrowException('DB_NAME');
+    const query = `SELECT * FROM ${db_name}.products`;
+    //@ts-ignore
+    return this.query(query, []).then(res => res);
+  }
+
+  async getOrders(filter?: 'last_month' | 'last_quarter'): Promise<Order[]> {
+    const db_name = this.config.getOrThrowException('DB_NAME');
+    let query = `SELECT * FROM ${db_name}.orders`;
+    if (filter === 'last_month') {
+      query += ` WHERE start_date >= date_trunc('month', current_date - interval '1' month) AND and start_date < date_trunc('month', current_date)`
+    }
+    //@ts-ignore
+    return this.query(query, []).then(res => res);
   }
 
   async getDiscountPoints(): Promise<DiscountPoint[]> {

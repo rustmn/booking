@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DbService } from 'src/db/db.service';
-import { Order } from './interfaces';
-import { Tarif } from '../db/interfaces';
+import { Order, Product } from './interfaces';
 
 @Injectable()
 export class OrdersService {
@@ -38,6 +37,28 @@ export class OrdersService {
     return total;
   }
 
+  async report(filter?: 'last_month') {
+    const products: Product[] = await this.db.getProducts();
+    console.log('products', products);
+    const orders: Order[] = await this.db.getOrders(filter);
+    const _report = [];
+    console.log('orders: ', orders);
+    for (const product of products) {
+      const relevant_orders = orders.filter(order => order.product_id === product.id);
+      console.log('re', relevant_orders);
+      let days_in_use = 0;
+      relevant_orders.forEach(order => {
+        days_in_use += order.period;
+      })
+      const rep = {
+        product_id: product.id,
+        days_in_use
+      }
+      _report.push(rep);
+    }
+    return _report;
+  }
+
   async orderProduct(options: {
     id: number;
     period: number;
@@ -49,7 +70,7 @@ export class OrdersService {
   }) {
     const price = await this.calcPrice(options.id, options.period);
     const { denotation } = await this.db.getProductTarif(options.id);
-
+    //@ts-ignore
     const order: Order = {
       id: options.id,
       period: options.period,
