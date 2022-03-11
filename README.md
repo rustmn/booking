@@ -27,10 +27,10 @@
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
 ## Available HTTP routes:
-`POST /api/order
-`POST /api/report
-`GET /api/price
-`GET /api/cars/:id 
+`POST /api/order` create order <br/>
+`POST /api/report` create report <br/>
+`GET /api/price` calc price <br/>
+`GET /api/cars/:id` check availability <br/>
 
 ## Installation
 
