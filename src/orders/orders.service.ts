@@ -38,14 +38,12 @@ export class OrdersService {
   }
 
   async report(filter?: 'last_month') {
+    //@ts-ignore
     const products: Product[] = await this.db.getProducts();
-    console.log('products', products);
     const orders: Order[] = await this.db.getOrders(filter);
     const _report = [];
-    console.log('orders: ', orders);
     for (const product of products) {
       const relevant_orders = orders.filter(order => order.product_id === product.id);
-      console.log('re', relevant_orders);
       let days_in_use = 0;
       relevant_orders.forEach(order => {
         days_in_use += order.period;
@@ -72,7 +70,7 @@ export class OrdersService {
     const { denotation } = await this.db.getProductTarif(options.id);
     //@ts-ignore
     const order: Order = {
-      id: options.id,
+      product_id: options.id,
       period: options.period,
       user_id: options.user_id,
       start_date: options.start_date,

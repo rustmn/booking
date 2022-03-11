@@ -77,28 +77,58 @@ export class DbService {
 
     for (const key of Object.keys(rels)) {
       if (event.hasOwnProperty(key) && event[key]) {
-        console.log(event[key]);
         throw new Error(`${rels[key]} error`);
       }
     }
     throw new Error('unexpeted error');
   }
 
-  async getProducts(): Promise<Product[]> {
-    const db_name = this.config.getOrThrowException('DB_NAME');
-    const query = `SELECT * FROM ${db_name}.products`;
-    //@ts-ignore
-    return this.query(query, []).then(res => res);
+  async getLastOrderDate(product_id: number): Promise<Date | boolean> {
+    const orders = await this.getOrders('last_month', product_id);
+    if (!orders.length) {
+      return false;
+    }
+    const last_order = orders.sort((a, b) => {
+      //@ts-ignore
+      return new Date(a.start_date) - new Date(b.start_date);
+    }).slice(-1)[0];
+    const dt = new Date(last_order.start_date);
+    dt.setDate(dt.getDate() + last_order.period);
+    return dt;
   }
 
-  async getOrders(filter?: 'last_month' | 'last_quarter'): Promise<Order[]> {
+  async getProducts(id?: number): Promise<Product[] | Product> {
+    const db_name = this.config.getOrThrowException('DB_NAME');
+    let query = `SELECT * FROM ${db_name}.products`;
+    const values = [];
+    if (id) {
+      query += ' WHERE id=$1';
+      values.push(id);
+    }
+    return this.query(query, values).then(res => {
+      if (id) {
+        return res[0];
+      }
+      return res;
+    });
+  }
+
+  async getOrders(filter?: 'last_month' | 'last_quarter', id?: number): Promise<Order[]> {
     const db_name = this.config.getOrThrowException('DB_NAME');
     let query = `SELECT * FROM ${db_name}.orders`;
+    const values = [];
     if (filter === 'last_month') {
-      query += ` WHERE start_date >= date_trunc('month', current_date - interval '1' month) AND and start_date < date_trunc('month', current_date)`
+      query += ` WHERE start_date >= date_trunc('month', current_date - interval '1' month)
+      and start_date < date_trunc('month', current_date)`
+    }
+    if (id) {
+      query += ' AND product_id=$1'
+      values.push(id);
     }
     //@ts-ignore
-    return this.query(query, []).then(res => res);
+    return this.query(query, values).then(res => {
+      return res;
+    });
   }
 
   async getDiscountPoints(): Promise<DiscountPoint[]> {
@@ -123,17 +153,17 @@ export class DbService {
     user_id,
     start_date,
     price,
-    id,
+    product_id,
     tarif
   }: Order) {
     const db_name = this.config.getOrThrowException('DB_NAME');
     const query = `INSERT INTO ${db_name}.orders (id, product_id, price, user_id, period, start_date, tarif ${created_at ? ', created_at' : ''}) VALUES($1, $2, $3, $4, $5, $6, $7 ${created_at ? ', $8' : ''})`;
-    const values = [nanoid(), id, price, user_id, period, start_date || new Date(), tarif];
+    const values = [nanoid(), product_id, price, user_id, period, start_date || new Date(), tarif];
     if (created_at) {
       //@ts-ignore
       values.push(created_at);
     }
-    await this.query(`UPDATE ${db_name}.products SET in_use=$1`, [true]);
+    await this.query(`UPDATE ${db_name}.products SET in_use=$1 WHERE id=$2`, [true, product_id]);
     await this.query(query, values);
     return this.query(query.replace('.orders', '.active_orders'), values)
   }

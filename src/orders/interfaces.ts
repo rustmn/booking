@@ -11,13 +11,13 @@ export interface Order {
   start_date: Date;
   price: number;
   period: number;
-  product_id: string;
+  product_id: number;
   created_at?: Date;
   tarif: string;
 }
 
 export interface Product {
-  id: string;
+  id: number;
   product_type: Product_types;
   in_use: boolean;
   created_at: Date;

@@ -50,9 +50,26 @@ export class API {
       {
         label: 'is_availabe',
         check: async ({ id }: { id: number; }) => {
-          return this.db.checkAvailability(id);
+          const in_use = await this.db.checkAvailability(id);
+          return !in_use;
         },
         error_message: 'Product is not available now'
+      },
+      {
+        label: 'can_be_ordered',
+        check: async ({ id }: { id: number; }) => {
+          const last_order_date = await this.db.getLastOrderDate(id);
+          const now = new Date();
+          if (!last_order_date) {
+            return true;
+          }
+          //@ts-ignore
+          if (now - last_order_date < (86400 * 1000) * 3) {
+            return false;
+          }
+          return true;
+        },
+        error_message: 'Selected product can\'t be ordered right now'
       }
     ];
 
