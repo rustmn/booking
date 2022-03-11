@@ -20,13 +20,21 @@ export class OrdersService {
     const discount_points = await this.db.getDiscountPoints();
     const relevant_discount_points = discount_points.filter(point => point.clause < period);
     let total = price * period;
+    let days = 0;
 
     for (const point of relevant_discount_points) {
-      const raw_amount = price * point.active_days;
+      days = point.clause;
+      let actual_active_days =  period - days;
+      if (actual_active_days > point.active_days) {
+        actual_active_days = point.active_days
+      }
+      if (actual_active_days <= 0) {
+        actual_active_days = 1;
+      }
+      const raw_amount = price * actual_active_days;
       const decrease_amount = raw_amount / 100 * point.percent;
       total -= decrease_amount;
     }
-
     return total;
   }
 

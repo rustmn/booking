@@ -114,7 +114,7 @@ export class DbService {
       //@ts-ignore
       values.push(created_at);
     }
-
+    await this.query(`UPDATE ${db_name}.products SET in_use=$1`, [true]);
     await this.query(query, values);
     return this.query(query.replace('.orders', '.active_orders'), values)
   }
