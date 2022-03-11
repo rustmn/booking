@@ -17,6 +17,7 @@ import { nanoid } from 'nanoid';
 import {
   Tarif
 } from './interfaces';
+import connect from './db.connection';
 
 @Injectable()
 export class DbService {
@@ -30,35 +31,18 @@ export class DbService {
       this.connect();
     }
   }
-  async connect(): Promise<IClient> {
+  async connect() {
     this.connecting = true;
-    const _con: IClient = await new Promise(async (resolve, reject) => {
-      const connection_options = {
-        host: this.config.getOrThrowException('DB_HOST'),
-        user: this.config.getOrThrowException('DB_USER'),
-        password: this.config.getOrThrowException('DB_PASSWORD'),
-        port: parseInt('5432' || this.config.getOrThrowException('DB_PORT')),
-        db: 'booking'
-      }
-      const p = pgp({
-      error: (error, e) => {
-        this.errorHandler(e);
-        this.connecting = false;
-      }
-      });
-      const db = p(connection_options);
-      //@ts-ignore
-      await db.connect(connection_options).then(con => {
+
+    return connect().then(con => {
       //@ts-ignore
       this.connection = con;
       this.connecting = false;
-      });
-    });
-    return _con;
+    })
+
   }
 
   async query(query: string, values: any[]) {
-    
     return this.connection.query(query, values);
   }
 
